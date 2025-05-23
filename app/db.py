@@ -2,14 +2,25 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Use SQLite como fallback se não houver DATABASE_URL configurada
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
+# Configuração do banco de dados
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://postgres:iQALhTglaVrojkoUdagaqVimiGoCsIpX@postgres.railway.internal:5432/railway"
+)
 
-# Ajusta a URL do PostgreSQL se necessário (Railway adiciona sslmode=require)
+# Ajusta a URL do PostgreSQL se necessário
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {})
+# Configuração do engine do SQLAlchemy
+engine = create_engine(
+    DATABASE_URL,
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=30,
+    pool_recycle=1800
+)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
