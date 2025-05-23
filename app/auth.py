@@ -9,9 +9,10 @@ from sqlalchemy.orm import Session
 
 import db, models, schemas
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+# Configurações de autenticação
+SECRET_KEY = os.getenv("SECRET_KEY", "minha_super_chave_secreta_padrao_nao_usar_em_producao")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
