@@ -12,7 +12,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar o resto dos arquivos
-COPY app/ app/
+COPY app/ .
 
 # Configurar variáveis de ambiente básicas
 ENV PYTHONPATH=/app
@@ -32,17 +32,20 @@ EXPOSE 8000
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
+echo "Verificando estrutura do projeto..."\n\
+ls -la\n\
+\n\
 echo "Aguardando banco de dados..."\n\
 sleep 5\n\
 \n\
 echo "Inicializando banco de dados..."\n\
-python3 -c "from app.db import Base, engine; Base.metadata.create_all(bind=engine)"\n\
+PYTHONPATH=/app python3 -c "from db import Base, engine; Base.metadata.create_all(bind=engine)"\n\
 \n\
 echo "Configurando porta..."\n\
 PORT="${PORT:-8000}"\n\
 \n\
 echo "Iniciando servidor na porta $PORT..."\n\
-exec python3 -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 4 --log-level info\n\
+PYTHONPATH=/app exec python3 -m uvicorn main:app --host 0.0.0.0 --port "$PORT" --workers 4 --log-level info\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Usar script de inicialização
