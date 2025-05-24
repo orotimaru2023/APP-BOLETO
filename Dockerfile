@@ -1,6 +1,6 @@
-FROM python:3.10-slim
+FROM python:3.9-slim
 
-WORKDIR /code
+WORKDIR /app
 
 # Instalar dependências do sistema
 RUN apt-get update && apt-get install -y \
@@ -15,9 +15,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Configurar variáveis de ambiente
-ENV PYTHONPATH=/code
+ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
-ENV PORT=8000
+ENV PORT=8080
 ENV ENVIRONMENT=production
 ENV DATABASE_URL=sqlite:///./app.db
 ENV ACCESS_TOKEN_EXPIRE_MINUTES=60
@@ -25,9 +25,9 @@ ENV ALGORITHM=HS256
 ENV SECRET_KEY=minha_super_chave_secreta_padrao_nao_usar_em_producao
 
 # Verificar a estrutura do projeto
-RUN ls -la /code && ls -la /code/app
+RUN ls -la /app && ls -la /app/app
 
-EXPOSE 8000
+EXPOSE 8080
 
 # Criar arquivo Python para inicialização
 RUN echo 'import os\n\
@@ -40,14 +40,14 @@ def init_db():\n\
     Base.metadata.create_all(bind=engine)\n\
 \n\
 def main():\n\
-    port = int(os.getenv("PORT", "8000"))\n\
+    port = int(os.getenv("PORT", "8080"))\n\
     init_db()\n\
     print(f"Iniciando servidor na porta {port}...")\n\
     uvicorn.run("asgi:app", host="0.0.0.0", port=port, workers=1, log_level="debug")\n\
 \n\
 if __name__ == "__main__":\n\
     main()\n\
-' > /code/start.py
+' > /app/start.py
 
 # Usar Python diretamente para inicialização
 CMD ["python", "start.py"] 
