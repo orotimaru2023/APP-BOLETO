@@ -24,11 +24,13 @@ ENV DATABASE_URL=sqlite:///./app.db
 EXPOSE 8000
 
 # Criar script de inicialização
-RUN echo '#!/bin/sh\n\
-PORT="${PORT:-8000}"\n\
+RUN echo '#!/bin/bash\n\
 python -c "from app.db import Base, engine; Base.metadata.create_all(bind=engine)"\n\
-exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 4\n\
+if [ -z "$PORT" ]; then\n\
+    PORT=8000\n\
+fi\n\
+exec uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 4\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Usar script de inicialização
-CMD ["/bin/sh", "/app/start.sh"] 
+CMD ["/bin/bash", "/app/start.sh"] 
