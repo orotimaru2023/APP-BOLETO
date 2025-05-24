@@ -1,88 +1,88 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional, List
 from datetime import date
 from enum import Enum
-from datetime import date
-from pydantic import validator
+from decimal import Decimal
+from models import TipoDocumento, Role
 
 # --- USUÁRIO ---
+
+class DocumentoAutorizadoBase(BaseModel):
+    tipo: TipoDocumento
+    documento: str
+    nome: str
+    model_config = ConfigDict(from_attributes=True)
+
+class DocumentoAutorizadoCreate(DocumentoAutorizadoBase):
+    pass
+
+class DocumentoAutorizado(DocumentoAutorizadoBase):
+    id: int
+    registrado: bool
+    usuario_id: Optional[int] = None
 
 class UsuarioBase(BaseModel):
     nome: str
     email: EmailStr
-    cpf_cnpj: str
+    documento: str
+    model_config = ConfigDict(from_attributes=True)
 
 class UsuarioCreate(UsuarioBase):
     senha: str
 
-class UsuarioOut(UsuarioBase):
+class Usuario(UsuarioBase):
     id: int
-    is_admin: bool
+    role: Role
 
-    class Config:
-        orm_mode = True
+class UsuarioResponse(UsuarioBase):
+    id: int
+    role: Role
 
-# --- AUTENTICAÇÃO ---
-
-class LoginData(BaseModel):
-    email: EmailStr
-    senha: str
-
-class TokenData(BaseModel):
+class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
 # --- BOLETO ---
-
-class BoletoBase(BaseModel):
-    cpf_cnpj: str
-    valor: float
-    vencimento: date
-    status: str
-    historico: Optional[dict] = {}
-
-class BoletoCreate(BoletoBase):
-    pass
-
-class BoletoOut(BoletoBase):
-    id: int
-
-    class Config:
-        orm_mode = True
-
-class BoletoUpdate(BaseModel):
-    valor: Optional[float] = None
-    vencimento: Optional[date] = None
-    status: Optional[str] = None
-    historico: Optional[dict] = None
-
-    # schemas.py
-from pydantic import BaseModel
-from datetime import date
-
-class BoletoPut(BaseModel):
-    cpf_cnpj: str
-    valor: float
-    vencimento: date
-    status: str
-    historico: dict
 
 class StatusEnum(str, Enum):
     pendente = "pendente"
     pago = "pago"
     cancelado = "cancelado"
 
-status: StatusEnum
-
 class BoletoBase(BaseModel):
     cpf_cnpj: str
-    valor: float
+    valor: float = Field(gt=0)
     vencimento: date
     status: StatusEnum
-    historico: Optional[dict] = {}
+    historico: dict = Field(default_factory=dict)
+    model_config = ConfigDict(from_attributes=True)
 
-    @validator("vencimento")
-    def validar_vencimento(cls, v):
-        if v < date.today():
+    @property
+    def validar_vencimento(self) -> date:
+        if self.vencimento < date.today():
             raise ValueError("A data de vencimento não pode estar no passado.")
-        return v
+        return self.vencimento
+
+class BoletoCreate(BoletoBase):
+    pass
+
+class Boleto(BoletoBase):
+    id: int
+    usuario_id: Optional[int] = None
+
+class BoletoUpdate(BaseModel):
+    valor: Optional[float] = Field(None, gt=0)
+    vencimento: Optional[date] = None
+    status: Optional[StatusEnum] = None
+    historico: Optional[dict] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class BoletoPut(BoletoBase):
+    pass
+
+class VerificacaoDocumento(BaseModel):
+    autorizado: bool
+    mensagem: Optional[str] = None
