@@ -8,8 +8,13 @@ from fastapi import UploadFile, File
 import csv
 from io import StringIO
 import json
-import db, models, schemas, crud, auth
-from db import Base, engine
+import app.db as db
+import app.models as models
+import app.schemas as schemas
+import app.crud as crud
+import app.auth as auth
+from app.db import Base, engine
+import datetime
 
 Base.metadata.create_all(bind=engine)
 
@@ -35,9 +40,13 @@ def get_db():
     finally:
         db_session.close()
 
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "timestamp": str(datetime.datetime.now())}
+
 @app.get("/")
 def home():
-    return {"mensagem": "API de boletos funcionando com FastAPI!"}
+    return {"status": "healthy", "message": "API de boletos funcionando com FastAPI!"}
 
 @app.post("/register", response_model=schemas.UsuarioOut)
 def register(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):

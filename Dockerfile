@@ -19,12 +19,14 @@ ENV PYTHONPATH=/app
 ENV PORT=8000
 ENV ENVIRONMENT=production
 ENV PYTHONUNBUFFERED=1
+ENV DATABASE_URL=sqlite:///./app.db
 
 EXPOSE 8000
 
 # Criar script de inicialização
 RUN echo '#!/bin/sh\n\
 PORT="${PORT:-8000}"\n\
+python -c "from app.db import Base, engine; Base.metadata.create_all(bind=engine)"\n\
 exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 4\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
