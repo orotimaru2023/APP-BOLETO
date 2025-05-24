@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-import db, models, schemas
+from . import db, models, schemas
 
 # Configurações de autenticação
 SECRET_KEY = os.getenv("SECRET_KEY", "minha_super_chave_secreta_padrao_nao_usar_em_producao")
