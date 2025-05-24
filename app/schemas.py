@@ -3,7 +3,7 @@ from typing import Optional, List
 from datetime import date
 from enum import Enum
 from decimal import Decimal
-from models import TipoDocumento, Role
+from .models import TipoDocumento, Role
 
 # --- USUÁRIO ---
 

@@ -24,6 +24,9 @@ ENV ACCESS_TOKEN_EXPIRE_MINUTES=60
 ENV ALGORITHM=HS256
 ENV SECRET_KEY=minha_super_chave_secreta_padrao_nao_usar_em_producao
 
+# Verificar a estrutura do projeto
+RUN ls -la /code && ls -la /code/app
+
 EXPOSE 8000
 
 # Criar script de inicialização
@@ -31,20 +34,23 @@ RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
 echo "Verificando estrutura do projeto..."\n\
-ls -la\n\
-ls -la app/\n\
+ls -la /code\n\
+ls -la /code/app\n\
+\n\
+echo "Configurando PYTHONPATH..."\n\
+export PYTHONPATH=/code:$PYTHONPATH\n\
 \n\
 echo "Aguardando banco de dados..."\n\
 sleep 5\n\
 \n\
 echo "Inicializando banco de dados..."\n\
-PYTHONPATH=/code python3 -c "from app.db import Base, engine; from app.models import *; Base.metadata.create_all(bind=engine)"\n\
+python3 -c "from app.db import Base, engine; from app.models import *; Base.metadata.create_all(bind=engine)"\n\
 \n\
 echo "Configurando porta..."\n\
 PORT="${PORT:-8000}"\n\
 \n\
 echo "Iniciando servidor na porta $PORT..."\n\
-PYTHONPATH=/code exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 1 --log-level debug\n\
+exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 1 --log-level debug\n\
 ' > /code/start.sh && chmod +x /code/start.sh
 
 # Usar script de inicialização
