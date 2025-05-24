@@ -38,13 +38,13 @@ echo "Aguardando banco de dados..."\n\
 sleep 5\n\
 \n\
 echo "Inicializando banco de dados..."\n\
-python3 -c "from app.db import Base, engine; Base.metadata.create_all(bind=engine)"\n\
+PYTHONPATH=/code python3 -c "from app.db import Base, engine; from app.models import *; Base.metadata.create_all(bind=engine)"\n\
 \n\
 echo "Configurando porta..."\n\
 PORT="${PORT:-8000}"\n\
 \n\
 echo "Iniciando servidor na porta $PORT..."\n\
-exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 1 --log-level debug\n\
+PYTHONPATH=/code exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 1 --log-level debug\n\
 ' > /code/start.sh && chmod +x /code/start.sh
 
 # Usar script de inicialização
