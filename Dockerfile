@@ -45,7 +45,7 @@ echo "Configurando porta..."\n\
 PORT="${PORT:-8000}"\n\
 \n\
 echo "Iniciando servidor na porta $PORT..."\n\
-PYTHONPATH=/app exec python3 -m uvicorn main:app --host 0.0.0.0 --port "$PORT" --workers 4 --log-level info\n\
+PYTHONPATH=/app exec python3 -m uvicorn main:app --host 0.0.0.0 --port "$PORT" --workers 1 --log-level debug --reload\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Usar script de inicialização
