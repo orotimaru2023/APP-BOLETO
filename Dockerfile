@@ -20,7 +20,13 @@ ENV PORT=8000
 ENV ENVIRONMENT=production
 ENV PYTHONUNBUFFERED=1
 
-EXPOSE ${PORT}
+EXPOSE 8000
 
-# Usar o módulo correto com shell form para permitir expansão de variáveis
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 4 
+# Criar script de inicialização
+RUN echo '#!/bin/sh\n\
+PORT="${PORT:-8000}"\n\
+exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 4\n\
+' > /app/start.sh && chmod +x /app/start.sh
+
+# Usar script de inicialização
+CMD ["/bin/sh", "/app/start.sh"] 
