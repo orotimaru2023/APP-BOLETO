@@ -15,7 +15,7 @@ if ENVIRONMENT == "production":
     # URL do Railway Production
     DATABASE_URL = os.getenv(
         "DATABASE_URL",
-        "postgresql://postgres:02031993007aldo@caboose.proxy.rlwy.net:47938/railway"
+        "postgresql://postgres:iQALhTglaVrojkoUdagaqVimiGoCsIpX@postgres.railway.internal:5432/railway"
     )
     logger.info("Conectando ao banco de dados de produção (Railway)")
 else:
