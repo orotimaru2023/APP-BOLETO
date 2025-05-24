@@ -20,7 +20,7 @@ ENV PORT=8000
 ENV ENVIRONMENT=production
 ENV PYTHONUNBUFFERED=1
 
-EXPOSE 8000
+EXPOSE ${PORT}
 
-# Usar o módulo correto
-CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 4 
+# Usar o módulo correto com shell form para permitir expansão de variáveis
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 4 
