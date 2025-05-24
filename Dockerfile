@@ -11,20 +11,14 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Criar estrutura de diretórios
-RUN mkdir -p app
+# Criar estrutura de diretórios e copiar arquivos
+COPY . .
 
-# Copiar arquivos do backend
-COPY app/*.py app/
-COPY app/__init__.py app/
-
-# Configurar variáveis de ambiente básicas
+# Configurar variáveis de ambiente
 ENV PYTHONPATH=/code
 ENV PYTHONUNBUFFERED=1
-
-# Valores padrão para desenvolvimento local
 ENV PORT=8000
-ENV ENVIRONMENT=development
+ENV ENVIRONMENT=production
 ENV DATABASE_URL=sqlite:///./app.db
 ENV ACCESS_TOKEN_EXPIRE_MINUTES=60
 ENV ALGORITHM=HS256
@@ -44,13 +38,13 @@ echo "Aguardando banco de dados..."\n\
 sleep 5\n\
 \n\
 echo "Inicializando banco de dados..."\n\
-cd /code && python3 -c "from app.db import Base, engine; Base.metadata.create_all(bind=engine)"\n\
+python3 -c "from app.db import Base, engine; Base.metadata.create_all(bind=engine)"\n\
 \n\
 echo "Configurando porta..."\n\
 PORT="${PORT:-8000}"\n\
 \n\
 echo "Iniciando servidor na porta $PORT..."\n\
-cd /code && exec python3 -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 1 --log-level debug\n\
+exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 1 --log-level debug\n\
 ' > /code/start.sh && chmod +x /code/start.sh
 
 # Usar script de inicialização
