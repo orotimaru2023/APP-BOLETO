@@ -29,29 +29,25 @@ RUN ls -la /code && ls -la /code/app
 
 EXPOSE 8000
 
-# Criar script de inicialização
-RUN echo '#!/bin/bash\n\
-set -e\n\
+# Criar arquivo Python para inicialização
+RUN echo 'import os\n\
+import uvicorn\n\
+from app.db import Base, engine\n\
+from app.models import *\n\
 \n\
-echo "Verificando estrutura do projeto..."\n\
-ls -la /code\n\
-ls -la /code/app\n\
+def init_db():\n\
+    print("Inicializando banco de dados...")\n\
+    Base.metadata.create_all(bind=engine)\n\
 \n\
-echo "Configurando PYTHONPATH..."\n\
-export PYTHONPATH=/code:$PYTHONPATH\n\
+def main():\n\
+    port = int(os.getenv("PORT", "8000"))\n\
+    init_db()\n\
+    print(f"Iniciando servidor na porta {port}...")\n\
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, workers=1, log_level="debug")\n\
 \n\
-echo "Aguardando banco de dados..."\n\
-sleep 5\n\
-\n\
-echo "Inicializando banco de dados..."\n\
-cd /code && python3 -c "from app.db import Base, engine; from app.models import *; Base.metadata.create_all(bind=engine)"\n\
-\n\
-echo "Configurando porta..."\n\
-PORT="${PORT:-8000}"\n\
-\n\
-echo "Iniciando servidor na porta $PORT..."\n\
-cd /code && exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 1 --log-level debug\n\
-' > /code/start.sh && chmod +x /code/start.sh
+if __name__ == "__main__":\n\
+    main()\n\
+' > /code/start.py
 
-# Usar script de inicialização
-CMD ["/bin/bash", "/code/start.sh"] 
+# Usar Python diretamente para inicialização
+CMD ["python", "start.py"] 
