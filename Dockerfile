@@ -30,16 +30,19 @@ EXPOSE 8000
 
 # Criar script de inicialização
 RUN echo '#!/bin/bash\n\
-# Aguardar 5 segundos para o banco de dados inicializar\n\
+set -e\n\
+\n\
+echo "Aguardando banco de dados..."\n\
 sleep 5\n\
-# Inicializar o banco de dados\n\
-python -c "from app.db import Base, engine; Base.metadata.create_all(bind=engine)"\n\
-# Configurar a porta\n\
-if [ -z "$PORT" ]; then\n\
-    PORT=8000\n\
-fi\n\
-# Iniciar o servidor\n\
-exec uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 4 --log-level info\n\
+\n\
+echo "Inicializando banco de dados..."\n\
+python3 -c "from app.db import Base, engine; Base.metadata.create_all(bind=engine)"\n\
+\n\
+echo "Configurando porta..."\n\
+PORT="${PORT:-8000}"\n\
+\n\
+echo "Iniciando servidor na porta $PORT..."\n\
+exec python3 -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 4 --log-level info\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Usar script de inicialização
