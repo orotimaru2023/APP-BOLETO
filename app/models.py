@@ -27,7 +27,7 @@ class Usuario(Base):
     nome = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
     senha = Column(String, nullable=False)
-    documento = Column(String, unique=True, nullable=False)
+    cpf_cnpj = Column(String, unique=True, nullable=False)
     role = Column(Enum(Role), default=Role.USER, nullable=False)
     boletos = relationship("Boleto", back_populates="usuario")
     documento_autorizado = relationship("DocumentoAutorizado", back_populates="usuario", uselist=False)
@@ -36,6 +36,7 @@ class Boleto(Base):
     __tablename__ = 'boletos'
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
+    cpf_cnpj = Column(String, nullable=False)
     valor = Column(Numeric(10, 2))
     vencimento = Column(Date)
     status = Column(String)
