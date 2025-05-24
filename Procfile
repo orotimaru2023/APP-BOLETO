@@ -1,1 +1,1 @@
-web: if [ -z "$PORT" ]; then PORT=8000; fi && uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --log-level debug --reload 
+web: if [ -z "$PORT" ]; then PORT=8000; fi && uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1 --log-level debug --reload 
