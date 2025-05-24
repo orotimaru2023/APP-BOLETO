@@ -8,13 +8,13 @@ from fastapi import UploadFile, File
 import csv
 from io import StringIO
 import json
-import app.db as db
-import app.models as models
-import app.schemas as schemas
-import app.crud as crud
-import app.auth as auth
-from app.db import Base, engine
 import datetime
+from . import db
+from . import models
+from . import schemas
+from . import crud
+from . import auth
+from .db import Base, engine
 
 Base.metadata.create_all(bind=engine)
 

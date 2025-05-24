@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-WORKDIR /app
+WORKDIR /code
 
 # Instalar dependências do sistema
 RUN apt-get update && apt-get install -y \
@@ -11,12 +11,15 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar o resto dos arquivos para a pasta app/
+# Criar estrutura de diretórios
 RUN mkdir -p app
-COPY app/ app/
+
+# Copiar arquivos do backend
+COPY app/*.py app/
+COPY app/__init__.py app/
 
 # Configurar variáveis de ambiente básicas
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/code
 ENV PYTHONUNBUFFERED=1
 
 # Valores padrão para desenvolvimento local
@@ -41,14 +44,14 @@ echo "Aguardando banco de dados..."\n\
 sleep 5\n\
 \n\
 echo "Inicializando banco de dados..."\n\
-python3 -c "from app.db import Base, engine; Base.metadata.create_all(bind=engine)"\n\
+cd /code && python3 -c "from app.db import Base, engine; Base.metadata.create_all(bind=engine)"\n\
 \n\
 echo "Configurando porta..."\n\
 PORT="${PORT:-8000}"\n\
 \n\
 echo "Iniciando servidor na porta $PORT..."\n\
-exec python3 -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 1 --log-level debug\n\
-' > /app/start.sh && chmod +x /app/start.sh
+cd /code && exec python3 -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 1 --log-level debug\n\
+' > /code/start.sh && chmod +x /code/start.sh
 
 # Usar script de inicialização
-CMD ["/bin/bash", "/app/start.sh"] 
+CMD ["/bin/bash", "/code/start.sh"] 
