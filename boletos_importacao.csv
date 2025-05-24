@@ -1,0 +1,11 @@
+cpf_cnpj,nome_empresa,valor,vencimento,status,observacao,historico
+12345678901,"Empresa A Ltda",150.50,2024-05-01,pendente,"Fatura mensal de serviços",{"criacao":"Importado via CSV"}
+23456789012,"Empresa B S.A.",275.80,2024-05-05,pendente,"Mensalidade de maio",{"criacao":"Importado via CSV"}
+34567890123,"Empresa C ME",430.25,2024-05-10,pendente,"Serviços de consultoria",{"criacao":"Importado via CSV"}
+45678901234,"Empresa D EPP",890.00,2024-05-15,pendente,"Contrato anual",{"criacao":"Importado via CSV"}
+56789012345,"Empresa E & Cia",320.75,2024-05-20,pendente,"Manutenção mensal",{"criacao":"Importado via CSV"}
+67890123456,"Empresa F Ltda",567.90,2024-05-25,pendente,"Licença de software",{"criacao":"Importado via CSV"}
+78901234567,"Empresa G S.A.",789.30,2024-06-01,pendente,"Hospedagem de servidor",{"criacao":"Importado via CSV"}
+89012345678,"Empresa H ME",234.60,2024-06-05,pendente,"Suporte técnico",{"criacao":"Importado via CSV"}
+90123456789,"Empresa I EPP",678.45,2024-06-10,pendente,"Serviços de marketing",{"criacao":"Importado via CSV"}
+01234567890,"Empresa J Ltda",445.85,2024-06-15,pendente,"Consultoria mensal",{"criacao":"Importado via CSV"} 

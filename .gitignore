@@ -20,27 +20,36 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# Ambiente Virtual
 venv/
-ENV/
 env/
-.env
+ENV/
 
-# IDE
+# IDEs e editores
 .idea/
 .vscode/
 *.swp
 *.swo
+.DS_Store
 
-# SQLite
-*.db
-*.sqlite3
+# Arquivos de ambiente
+.env
+.env.local
+.env.*.local
 
 # Logs
 *.log
+logs/
 
-# Local development settings
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local 
+# Arquivos temporários
+tmp/
+temp/
+
+# Arquivos de banco de dados
+*.sqlite3
+*.db
+
+# Arquivos de cache
+.pytest_cache/
+.coverage
+htmlcov/ 

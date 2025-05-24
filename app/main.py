@@ -15,8 +15,10 @@ from . import schemas
 from . import crud
 from . import auth
 from .db import Base, engine
+from sqlalchemy import func
 
-Base.metadata.create_all(bind=engine)
+# Criar as tabelas
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -166,24 +168,41 @@ def importar_boletos_csv(
     if not usuario.is_admin:
         raise HTTPException(status_code=403, detail="Apenas administradores podem importar boletos.")
 
-    conteudo = arquivo.file.read().decode("utf-8")
-    leitor = csv.DictReader(StringIO(conteudo))
+    try:
+        conteudo = arquivo.file.read().decode("utf-8")
+        leitor = csv.DictReader(StringIO(conteudo))
 
-    boletos = []
-    for linha in leitor:
-        boleto = models.Boleto(
-            usuario_id=usuario.id,
-            cpf_cnpj=linha["cpf_cnpj"],
-            valor=float(linha["valor"]),
-            vencimento=linha["vencimento"],
-            status=linha["status"],
-            historico=json.loads(linha["historico"])
+        boletos = []
+        for linha in leitor:
+            # Converter a data de vencimento para o formato correto
+            data_vencimento = datetime.datetime.strptime(linha["vencimento"], "%Y-%m-%d").date()
+            
+            # Criar o boleto sem especificar o ID
+            boleto = models.Boleto(
+                usuario_id=usuario.id,
+                cpf_cnpj=linha["cpf_cnpj"],
+                valor=float(linha["valor"]),
+                vencimento=data_vencimento,
+                status=linha["status"],
+                historico=json.loads(linha["historico"])
+            )
+            db.add(boleto)
+            boletos.append(boleto)
+
+        db.commit()
+        return {"mensagem": f"{len(boletos)} boletos importados com sucesso."}
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail=f"Erro ao processar o arquivo: {str(e)}"
         )
-        db.add(boleto)
-        boletos.append(boleto)
-
-    db.commit()
-    return {"mensagem": f"{len(boletos)} boletos importados com sucesso."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao importar boletos: {str(e)}"
+        )
 
 @app.post("/importar-boletos-txt")
 def importar_boletos_txt(
@@ -212,3 +231,51 @@ def importar_boletos_txt(
 
     db.commit()
     return {"mensagem": f"{len(boletos)} boletos importados com sucesso."}
+
+@app.get("/test-db")
+def test_db(db: Session = Depends(get_db)):
+    try:
+        # Tenta fazer uma consulta usando o ORM
+        from .models import Usuario
+        
+        count = db.query(func.count(Usuario.id)).scalar()
+        return {
+            "message": "Conexão com o banco de dados estabelecida com sucesso!",
+            "usuarios_cadastrados": count
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao conectar com o banco de dados: {str(e)}"
+        )
+
+@app.get("/admin/boletos", response_model=List[schemas.BoletoComUsuario])
+def listar_todos_boletos(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1),
+    order_by: Optional[str] = Query("vencimento"),
+    usuario=Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    if usuario.role != models.Role.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas administradores podem acessar esta rota"
+        )
+
+    query = db.query(models.Boleto).join(models.Usuario)
+
+    # Ordenação básica por coluna
+    if order_by == "valor":
+        query = query.order_by(models.Boleto.valor)
+    elif order_by == "status":
+        query = query.order_by(models.Boleto.status)
+    elif order_by == "cpf_cnpj":
+        query = query.order_by(models.Boleto.cpf_cnpj)
+    else:
+        query = query.order_by(models.Boleto.vencimento)
+
+    total = query.count()
+    boletos = query.offset(skip).limit(limit).all()
+    
+    return boletos

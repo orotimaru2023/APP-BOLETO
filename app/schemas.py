@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import date
 from enum import Enum
 from decimal import Decimal
@@ -21,11 +21,15 @@ class DocumentoAutorizado(DocumentoAutorizadoBase):
     registrado: bool
     usuario_id: Optional[int] = None
 
+class Role(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
+
 class UsuarioBase(BaseModel):
     nome: str
     email: EmailStr
-    documento: str
-    model_config = ConfigDict(from_attributes=True)
+    cpf_cnpj: str
+    role: Role = Role.USER
 
 class UsuarioCreate(UsuarioBase):
     senha: str
@@ -36,14 +40,18 @@ class Usuario(UsuarioBase):
 
 class UsuarioResponse(UsuarioBase):
     id: int
-    role: Role
+    is_admin: bool = False
+
+    class Config:
+        from_attributes = True
 
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
 class TokenData(BaseModel):
-    email: Optional[str] = None
+    access_token: str
+    token_type: str
 
 # --- BOLETO ---
 
@@ -54,10 +62,12 @@ class StatusEnum(str, Enum):
 
 class BoletoBase(BaseModel):
     cpf_cnpj: str
+    nome_empresa: str
     valor: float = Field(gt=0)
     vencimento: date
     status: StatusEnum
-    historico: dict = Field(default_factory=dict)
+    observacao: Optional[str] = None
+    historico: Dict[str, Any]
     model_config = ConfigDict(from_attributes=True)
 
     @property
@@ -73,12 +83,16 @@ class Boleto(BoletoBase):
     id: int
     usuario_id: Optional[int] = None
 
+    class Config:
+        from_attributes = True
+
 class BoletoUpdate(BaseModel):
-    valor: Optional[float] = Field(None, gt=0)
+    nome_empresa: Optional[str] = None
+    valor: Optional[float] = None
     vencimento: Optional[date] = None
     status: Optional[StatusEnum] = None
-    historico: Optional[dict] = None
-    model_config = ConfigDict(from_attributes=True)
+    observacao: Optional[str] = None
+    historico: Optional[Dict[str, Any]] = None
 
 class BoletoPut(BoletoBase):
     pass
@@ -86,3 +100,11 @@ class BoletoPut(BoletoBase):
 class VerificacaoDocumento(BaseModel):
     autorizado: bool
     mensagem: Optional[str] = None
+
+class BoletoComUsuario(BoletoBase):
+    id: int
+    usuario_id: int
+    usuario: UsuarioResponse
+
+    class Config:
+        from_attributes = True
