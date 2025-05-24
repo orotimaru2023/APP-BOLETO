@@ -43,7 +43,7 @@ def main():\n\
     port = int(os.getenv("PORT", "8000"))\n\
     init_db()\n\
     print(f"Iniciando servidor na porta {port}...")\n\
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port, workers=1, log_level="debug")\n\
+    uvicorn.run("asgi:app", host="0.0.0.0", port=port, workers=1, log_level="debug")\n\
 \n\
 if __name__ == "__main__":\n\
     main()\n\
