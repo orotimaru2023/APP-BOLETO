@@ -24,7 +24,7 @@ ENV ENVIRONMENT=development
 ENV DATABASE_URL=sqlite:///./app.db
 ENV ACCESS_TOKEN_EXPIRE_MINUTES=60
 ENV ALGORITHM=HS256
-ENV SECRET_KEY=dev_secret_key_do_not_use_in_production
+ENV SECRET_KEY=minha_super_chave_secreta_padrao_nao_usar_em_producao
 
 EXPOSE 8000
 
