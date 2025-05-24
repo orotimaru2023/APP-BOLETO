@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Criar estrutura de diretórios e copiar arquivos
+# Copiar o resto dos arquivos
 COPY . .
 
 # Configurar variáveis de ambiente
@@ -29,25 +29,4 @@ RUN ls -la /app && ls -la /app/app
 
 EXPOSE 8080
 
-# Criar arquivo Python para inicialização
-RUN echo 'import os\n\
-import uvicorn\n\
-from app.db import Base, engine\n\
-from app.models import *\n\
-\n\
-def init_db():\n\
-    print("Inicializando banco de dados...")\n\
-    Base.metadata.create_all(bind=engine)\n\
-\n\
-def main():\n\
-    port = int(os.getenv("PORT", "8080"))\n\
-    init_db()\n\
-    print(f"Iniciando servidor na porta {port}...")\n\
-    uvicorn.run("asgi:app", host="0.0.0.0", port=port, workers=1, log_level="debug")\n\
-\n\
-if __name__ == "__main__":\n\
-    main()\n\
-' > /app/start.py
-
-# Usar Python diretamente para inicialização
-CMD ["python", "start.py"] 
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"] 
