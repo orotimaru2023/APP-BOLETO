@@ -48,7 +48,7 @@ def health_check():
 def home():
     return {"status": "healthy", "message": "API de boletos funcionando com FastAPI!"}
 
-@app.post("/register", response_model=schemas.UsuarioOut)
+@app.post("/register", response_model=schemas.UsuarioResponse)
 def register(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
     return crud.criar_usuario(db, usuario)
 
@@ -60,7 +60,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     access_token = auth.create_access_token(data={"sub": usuario.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.get("/boletos", response_model=List[schemas.BoletoOut])
+@app.get("/boletos", response_model=List[schemas.Boleto])
 def listar_boletos(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1),
@@ -81,7 +81,7 @@ def listar_boletos(
     boletos = query.offset(skip).limit(limit).all()
     return boletos
 
-@app.post("/boletos", response_model=schemas.BoletoOut)
+@app.post("/boletos", response_model=schemas.Boleto)
 def criar_boleto(
     boleto: schemas.BoletoCreate,
     usuario=Depends(auth.get_current_user),
@@ -91,11 +91,11 @@ def criar_boleto(
         raise HTTPException(status_code=403, detail="Apenas administradores podem criar boletos.")
     
     boleto_data = boleto.dict()
-    boleto_data["usuario_id"] = usuario.id  # <-- Adiciona o campo!
+    boleto_data["usuario_id"] = usuario.id
 
     return crud.criar_boleto(db, boleto_data)
 
-@app.put("/boletos/{boleto_id}", response_model=schemas.BoletoOut)
+@app.put("/boletos/{boleto_id}", response_model=schemas.Boleto)
 def atualizar_boleto_put(
     boleto_id: int = Path(..., description="ID do boleto a ser atualizado"),
     boleto_data: schemas.BoletoPut = ...,
@@ -110,66 +110,8 @@ def atualizar_boleto_put(
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Erro ao atualizar boleto: {str(e)}")
-    
 
-@app.post("/importar-boletos-csv")
-def importar_boletos_csv(
-    arquivo: UploadFile = File(...),
-    usuario=Depends(auth.get_current_user),
-    db: Session = Depends(get_db)
-):
-    if not usuario.is_admin:
-        raise HTTPException(status_code=403, detail="Apenas administradores podem importar boletos.")
-
-    conteudo = arquivo.file.read().decode("utf-8")
-    leitor = csv.DictReader(StringIO(conteudo))
-
-    boletos = []
-    for linha in leitor:
-        boleto = models.Boleto(
-            usuario_id=usuario.id,
-            cpf_cnpj=linha["cpf_cnpj"],
-            valor=float(linha["valor"]),
-            vencimento=linha["vencimento"],
-            status=linha["status"],
-            historico=json.loads(linha["historico"])
-        )
-        db.add(boleto)
-        boletos.append(boleto)
-
-    db.commit()
-    return {"mensagem": f"{len(boletos)} boletos importados com sucesso."}
-
-
-@app.post("/importar-boletos-txt")
-def importar_boletos_txt(
-    arquivo: UploadFile = File(...),
-    usuario=Depends(auth.get_current_user),
-    db: Session = Depends(get_db)
-):
-    if not usuario.is_admin:
-        raise HTTPException(status_code=403, detail="Apenas administradores podem importar boletos.")
-
-    conteudo = arquivo.file.read().decode("utf-8")
-    leitor = csv.DictReader(StringIO(conteudo), delimiter=",")  # Altere o delimitador se necessário
-
-    boletos = []
-    for linha in leitor:
-        boleto = models.Boleto(
-            usuario_id=usuario.id,
-            cpf_cnpj=linha["cpf_cnpj"],
-            valor=float(linha["valor"]),
-            vencimento=linha["vencimento"],
-            status=linha["status"],
-            historico={"info": linha["historico"]}
-        )
-        db.add(boleto)
-        boletos.append(boleto)
-
-    db.commit()
-    return {"mensagem": f"{len(boletos)} boletos importados com sucesso."}
-
-@app.patch("/boletos/{boleto_id}", response_model=schemas.BoletoOut)
+@app.patch("/boletos/{boleto_id}", response_model=schemas.Boleto)
 def atualizar_boleto_patch(
     boleto_id: int,
     dados_patch: schemas.BoletoUpdate,
@@ -200,7 +142,7 @@ def deletar_boleto(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Erro ao deletar boleto: {str(e)}")
 
-@app.get("/boletos/{boleto_id}", response_model=schemas.BoletoOut)
+@app.get("/boletos/{boleto_id}", response_model=schemas.Boleto)
 def obter_boleto_por_id(
     boleto_id: int,
     usuario=Depends(auth.get_current_user),
@@ -214,3 +156,59 @@ def obter_boleto_por_id(
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Erro ao obter boleto: {str(e)}")
+
+@app.post("/importar-boletos-csv")
+def importar_boletos_csv(
+    arquivo: UploadFile = File(...),
+    usuario=Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not usuario.is_admin:
+        raise HTTPException(status_code=403, detail="Apenas administradores podem importar boletos.")
+
+    conteudo = arquivo.file.read().decode("utf-8")
+    leitor = csv.DictReader(StringIO(conteudo))
+
+    boletos = []
+    for linha in leitor:
+        boleto = models.Boleto(
+            usuario_id=usuario.id,
+            cpf_cnpj=linha["cpf_cnpj"],
+            valor=float(linha["valor"]),
+            vencimento=linha["vencimento"],
+            status=linha["status"],
+            historico=json.loads(linha["historico"])
+        )
+        db.add(boleto)
+        boletos.append(boleto)
+
+    db.commit()
+    return {"mensagem": f"{len(boletos)} boletos importados com sucesso."}
+
+@app.post("/importar-boletos-txt")
+def importar_boletos_txt(
+    arquivo: UploadFile = File(...),
+    usuario=Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    if not usuario.is_admin:
+        raise HTTPException(status_code=403, detail="Apenas administradores podem importar boletos.")
+
+    conteudo = arquivo.file.read().decode("utf-8")
+    leitor = csv.DictReader(StringIO(conteudo), delimiter=",")
+
+    boletos = []
+    for linha in leitor:
+        boleto = models.Boleto(
+            usuario_id=usuario.id,
+            cpf_cnpj=linha["cpf_cnpj"],
+            valor=float(linha["valor"]),
+            vencimento=linha["vencimento"],
+            status=linha["status"],
+            historico={"info": linha["historico"]}
+        )
+        db.add(boleto)
+        boletos.append(boleto)
+
+    db.commit()
+    return {"mensagem": f"{len(boletos)} boletos importados com sucesso."}
