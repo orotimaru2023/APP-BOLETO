@@ -2,10 +2,23 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import date
 from enum import Enum
-from decimal import Decimal
-from .models import TipoDocumento, Role
 
-# --- USUÁRIO ---
+# --- ENUMS ---
+
+class TipoDocumento(str, Enum):
+    CPF = "CPF"
+    CNPJ = "CNPJ"
+
+class Role(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
+
+class StatusEnum(str, Enum):
+    pendente = "pendente"
+    pago = "pago"
+    cancelado = "cancelado"
+
+# --- DOCUMENTOS AUTORIZADOS ---
 
 class DocumentoAutorizadoBase(BaseModel):
     tipo: TipoDocumento
@@ -18,12 +31,12 @@ class DocumentoAutorizadoCreate(DocumentoAutorizadoBase):
 
 class DocumentoAutorizado(DocumentoAutorizadoBase):
     id: int
-    registrado: bool
+    registrado: Optional[bool] = None  # Coloque como Optional se puder ser nulo no banco
     usuario_id: Optional[int] = None
 
-class Role(str, Enum):
-    ADMIN = "admin"
-    USER = "user"
+    model_config = ConfigDict(from_attributes=True)
+
+# --- USUÁRIO ---
 
 class UsuarioBase(BaseModel):
     nome: str
@@ -42,8 +55,9 @@ class UsuarioResponse(UsuarioBase):
     id: int
     is_admin: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+# --- TOKEN ---
 
 class Token(BaseModel):
     access_token: str
@@ -54,11 +68,6 @@ class TokenData(BaseModel):
     token_type: str
 
 # --- BOLETO ---
-
-class StatusEnum(str, Enum):
-    pendente = "pendente"
-    pago = "pago"
-    cancelado = "cancelado"
 
 class BoletoBase(BaseModel):
     cpf_cnpj: str
@@ -83,8 +92,7 @@ class Boleto(BoletoBase):
     id: int
     usuario_id: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class BoletoUpdate(BaseModel):
     nome_empresa: Optional[str] = None
@@ -106,5 +114,4 @@ class BoletoComUsuario(BoletoBase):
     usuario_id: int
     usuario: UsuarioResponse
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
