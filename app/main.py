@@ -51,10 +51,12 @@ def listar_documentos_autorizados(
     usuario=Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    return db.query(models.DocumentoAutorizado)\
-        .filter(models.DocumentoAutorizado.usuario_id == usuario.id)\
-        .order_by(models.DocumentoAutorizado.nome)\
-        .all()
+    if usuario.role == "admin":
+        return db.query(models.DocumentoAutorizado).all()
+    return db.query(models.DocumentoAutorizado).filter(
+        models.DocumentoAutorizado.usuario_id == usuario.id
+    ).all()
+
 
 @app.post("/documentos-autorizados", response_model=schemas.DocumentoAutorizado)
 def criar_documento_autorizado(
