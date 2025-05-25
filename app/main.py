@@ -43,6 +43,27 @@ def get_db():
     finally:
         db_session.close()
 
+@app.get("/documentos-autorizados", response_model=List[schemas.DocumentoAutorizado])
+def listar_documentos_autorizados(
+    usuario=Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    return db.query(models.DocumentoAutorizado).filter(
+        models.DocumentoAutorizado.usuario_id == usuario.id
+    ).all()
+
+@app.post("/documentos-autorizados", response_model=schemas.DocumentoAutorizado)
+def criar_documento_autorizado(
+    doc: schemas.DocumentoAutorizadoCreate,
+    usuario=Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    novo_doc = models.DocumentoAutorizado(**doc.dict(), usuario_id=usuario.id)
+    db.add(novo_doc)
+    db.commit()
+    db.refresh(novo_doc)
+    return novo_doc
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "timestamp": str(datetime.datetime.now())}
