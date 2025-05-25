@@ -7,19 +7,19 @@ class TipoDocumento(str, PyEnum):
     CPF = "CPF"
     CNPJ = "CNPJ"
 
-class Role(PyEnum):
+class Role(str, PyEnum):
     ADMIN = "admin"
     USER = "user"
 
 class DocumentoAutorizado(Base):
     __tablename__ = 'documentos_autorizados'
     id = Column(Integer, primary_key=True, index=True)
-    tipo = Column(String)
-    documento = Column(String)
-    nome = Column(String)
-    registrado = Column(Date)
+    tipo = Column(String, nullable=False)  # Se quiser, pode usar Enum(TipoDocumento), mas String é mais flexível
+    documento = Column(String, unique=True, nullable=False)
+    nome = Column(String, nullable=False)
+    registrado = Column(Boolean, default=False)  # Ou Date, se for data de registro (veja observação)
     usuario_id = Column(Integer, ForeignKey('usuarios.id'))
-    usuario = relationship("Usuario", back_populates="documento_autorizado")
+    usuario = relationship("Usuario", back_populates="documentos_autorizados")
 
 class Usuario(Base):
     __tablename__ = 'usuarios'
@@ -31,7 +31,7 @@ class Usuario(Base):
     is_admin = Column(Boolean, default=False)
     role = Column(Enum(Role), default=Role.USER)
     boletos = relationship("Boleto", back_populates="usuario")
-    documento_autorizado = relationship("DocumentoAutorizado", back_populates="usuario", uselist=False)
+    documentos_autorizados = relationship("DocumentoAutorizado", back_populates="usuario")  # Plural!
 
 class Boleto(Base):
     __tablename__ = 'boletos'
