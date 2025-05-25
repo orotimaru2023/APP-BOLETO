@@ -3,8 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from fastapi import Path, HTTPException
-from fastapi import UploadFile, File
+from fastapi import Path, UploadFile, File
 import csv
 from io import StringIO
 import json
@@ -43,14 +42,19 @@ def get_db():
     finally:
         db_session.close()
 
+# --------------------------
+# DOCUMENTOS AUTORIZADOS
+# --------------------------
+
 @app.get("/documentos-autorizados", response_model=List[schemas.DocumentoAutorizado])
 def listar_documentos_autorizados(
     usuario=Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    return db.query(models.DocumentoAutorizado).filter(
-        models.DocumentoAutorizado.usuario_id == usuario.id
-    ).all()
+    return db.query(models.DocumentoAutorizado)\
+        .filter(models.DocumentoAutorizado.usuario_id == usuario.id)\
+        .order_by(models.DocumentoAutorizado.nome)\
+        .all()
 
 @app.post("/documentos-autorizados", response_model=schemas.DocumentoAutorizado)
 def criar_documento_autorizado(
@@ -58,11 +62,23 @@ def criar_documento_autorizado(
     usuario=Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
+    # Impede duplicidade para o mesmo usuário
+    doc_existente = db.query(models.DocumentoAutorizado).filter_by(
+        documento=doc.documento,
+        usuario_id=usuario.id
+    ).first()
+    if doc_existente:
+        raise HTTPException(status_code=400, detail="Documento já cadastrado.")
+
     novo_doc = models.DocumentoAutorizado(**doc.dict(), usuario_id=usuario.id)
     db.add(novo_doc)
     db.commit()
     db.refresh(novo_doc)
     return novo_doc
+
+# --------------------------
+# USUÁRIO & AUTENTICAÇÃO
+# --------------------------
 
 @app.get("/health")
 def health_check():
@@ -88,6 +104,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     access_token = auth.create_access_token(data={"sub": usuario.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
+# --------------------------
+# BOLETOS
+# --------------------------
+
 @app.get("/boletos", response_model=List[schemas.Boleto])
 def listar_boletos(
     skip: int = Query(0, ge=0),
@@ -98,7 +118,6 @@ def listar_boletos(
 ):
     query = db.query(models.Boleto).filter(models.Boleto.cpf_cnpj == usuario.cpf_cnpj)
 
-    # Ordenação básica por coluna
     if order_by == "valor":
         query = query.order_by(models.Boleto.valor)
     elif order_by == "status":
@@ -200,10 +219,7 @@ def importar_boletos_csv(
 
         boletos = []
         for linha in leitor:
-            # Converter a data de vencimento para o formato correto
             data_vencimento = datetime.datetime.strptime(linha["vencimento"], "%Y-%m-%d").date()
-            
-            # Criar o boleto sem especificar o ID
             boleto = models.Boleto(
                 usuario_id=usuario.id,
                 cpf_cnpj=linha["cpf_cnpj"],
@@ -261,9 +277,7 @@ def importar_boletos_txt(
 @app.get("/test-db")
 def test_db(db: Session = Depends(get_db)):
     try:
-        # Tenta fazer uma consulta usando o ORM
         from .models import Usuario
-        
         count = db.query(func.count(Usuario.id)).scalar()
         return {
             "message": "Conexão com o banco de dados estabelecida com sucesso!",
@@ -291,7 +305,6 @@ def listar_todos_boletos(
 
     query = db.query(models.Boleto).join(models.Usuario)
 
-    # Ordenação básica por coluna
     if order_by == "valor":
         query = query.order_by(models.Boleto.valor)
     elif order_by == "status":
