@@ -47,6 +47,10 @@ def get_db():
 def health_check():
     return {"status": "healthy", "timestamp": str(datetime.datetime.now())}
 
+@app.get("/usuarios/me", response_model=schemas.UsuarioResponse)
+def get_current_user(usuario=Depends(auth.get_current_user)):
+    return usuario
+
 @app.get("/")
 def home():
     return {"status": "healthy", "message": "API de boletos funcionando com FastAPI!"}
