@@ -27,6 +27,7 @@ app.add_middleware(
     allow_origins=[
         "https://frontend-app-boleto.vercel.app",
         "https://app-boleto-production.up.railway.app",
+        "https://frontend-app-boleto-git-main-aldos-projects-e8f51764.vercel.app",
         "http://localhost:5173",
         "http://localhost:3000"
     ],
